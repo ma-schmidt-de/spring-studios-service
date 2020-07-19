@@ -1,6 +1,7 @@
 # Intellij
 /.idea/
 .idea/misc.xml
+.idea/gradle.xml
 *.iml
 *.iws
 

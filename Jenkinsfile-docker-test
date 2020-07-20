@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+    triggers {
+        pollSCM '* * * * *'
+    }
+    stages {
+        stage('Build') {
+            steps {
+                sh './gradlew assemble'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh './gradlew test'
+            }
+        }
+
+        stage('Build Docker image') {
+            steps {
+                sh './gradlew docker'
+            }
+        }
+
+        stage('Run Docker image') {
+            steps {
+                sh './gradlew dockerRun'
+            }
+        }
+
+        stage('Test with Postman') {
+            environment {
+                POSTMAN_APIKEY = credentials('postman-apikey')
+            }
+            steps {
+                sh 'curl -L -X GET 'https://api.getpostman.com/collections/4175453-9897fdc1-c74f-4912-9240-e75a5a8fd812' \
+                    -H 'X-Api-Key: $POSTMAN_APIKEY' > collection.json'
+
+                sh 'newman run collection.json'
+            }
+        }
+
+        stage('Stop Docker image') {
+            steps {
+                sh './gradlew dockerStop'
+            }
+        }
+    }
+}

@@ -5,6 +5,7 @@ plugins {
     id 'pl.allegro.tech.build.axion-release' version '1.10.1'
     id 'com.palantir.docker' version '0.25.0'
     id 'com.palantir.docker-run' version '0.25.0'
+    id 'jp.classmethod.aws.cloudformation' version '0.41'
 }
 
 version = scmVersion.version
@@ -31,7 +32,8 @@ test {
 }
 
 // configure the com.palantir.docker plugin
-String imageName = "maschmidt/studios-service:$version"
+String dockerHubUsernameProperty = findProperty('dockerHubUsername') ?: 'maschmidt'
+String imageName = "${dockerHubUsernameProperty}/studios-service:$version"
 docker {
     name imageName
     files "build/libs/${bootJar.archiveFileName.get()}"
@@ -42,6 +44,18 @@ docker {
 dockerRun {
     name project.name
     image imageName
-    ports '8080:8080'
+    ports '8090:8080'
     clean true
+}
+
+// configure jp.classmethod.aws.cloudformation plugin
+cloudFormation {
+    stackName "$project.name-stack"
+    stackParams([
+            SubnetID: findProperty('subnetId') ?: '',
+            ServiceName: project.name,
+            ServiceVersion: project.version,
+            DockerHubUsername: dockerHubUsernameProperty
+    ])
+    templateFile project.file("ecs.yml")
 }

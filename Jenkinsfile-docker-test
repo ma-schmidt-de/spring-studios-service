@@ -24,6 +24,7 @@ pipeline {
 
         stage('Run Docker image') {
             steps {
+                sh 'docker stop spring-studios-service'
                 sh './gradlew dockerRun'
             }
         }
@@ -33,11 +34,8 @@ pipeline {
                 POSTMAN_APIKEY = credentials('postman-apikey')
             }
             steps {
-                sh 'curl -L -X GET "https://api.getpostman.com/collections/4175453-9897fdc1-c74f-4912-9240-e75a5a8fd812" -H "X-Api-Key: $POSTMAN_APIKEY" > collection.json'
-                sh 'ls -al collection.json'
-                sh 'cat collection.json'
                 sh 'docker pull postman/newman:latest'
-                sh 'docker run -v $WORKSPACE:/etc/newman -t postman/newman run collection.json'
+                sh 'docker run -v $WORKSPACE:/etc/newman -t postman/newman run "https://api.getpostman.com/collections/4175453-9897fdc1-c74f-4912-9240-e75a5a8fd812?apikey=$POSTMAN_APIKEY"'
             }
         }
 
